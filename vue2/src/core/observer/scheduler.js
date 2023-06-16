@@ -16,6 +16,7 @@ export const MAX_UPDATE_COUNT = 100
 
 const queue: Array<Watcher> = []
 const activatedChildren: Array<Component> = []
+/*一个哈希表，用来存放watcher对象的id，防止重复的watcher对象多次加入*/
 let has: { [key: number]: ?true } = {}
 let circular: { [key: number]: number } = {}
 let waiting = false
@@ -24,6 +25,7 @@ let index = 0
 
 /**
  * Reset the scheduler's state.
+ * 重置调度者的状态
  */
 function resetSchedulerState () {
   index = queue.length = activatedChildren.length = 0
@@ -67,6 +69,7 @@ if (inBrowser && !isIE) {
 
 /**
  * Flush both queues and run the watchers.
+ * 执行队列中所有的watcher
  */
 function flushSchedulerQueue () {
   currentFlushTimestamp = getNow()
@@ -81,17 +84,24 @@ function flushSchedulerQueue () {
   //    user watchers are created before the render watcher)
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.
+  /*
+    给queue排序，这样做可以保证：
+    1.组件更新的顺序是从父组件到子组件的顺序，因为父组件总是比子组件先创建。
+    2.一个组件的user watchers比render watcher先运行，因为user watchers往往比render watcher更早创建
+    3.如果一个组件在父组件watcher运行期间被销毁，它的watcher执行将被跳过。
+  */
   queue.sort((a, b) => a.id - b.id)
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
+  /*这里不用index = queue.length;index > 0; index--的方式写是因为不要将length进行缓存，因为在执行处理现有watcher对象期间，更多的watcher对象可能会被push进queue*/
   for (index = 0; index < queue.length; index++) {
     watcher = queue[index]
     if (watcher.before) {
       watcher.before()
     }
     id = watcher.id
-    has[id] = null
+    has[id] = null /*将has的标记删除*/
     watcher.run()
     // in dev build, check and stop circular updates.
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
@@ -114,10 +124,11 @@ function flushSchedulerQueue () {
   const activatedQueue = activatedChildren.slice()
   const updatedQueue = queue.slice()
 
+  /*重置调度者的状态*/
   resetSchedulerState()
-
-  // call component updated and activated hooks
+  // call component updated and activated hooks /*使子组件状态都改编成active同时调用activated钩子*/
   callActivatedHooks(activatedQueue)
+  /*调用updated钩子*/
   callUpdatedHooks(updatedQueue)
 
   // devtool hook
@@ -127,6 +138,7 @@ function flushSchedulerQueue () {
   }
 }
 
+/*调用updated钩子*/
 function callUpdatedHooks (queue) {
   let i = queue.length
   while (i--) {
@@ -141,6 +153,7 @@ function callUpdatedHooks (queue) {
 /**
  * Queue a kept-alive component that was activated during patch.
  * The queue will be processed after the entire tree has been patched.
+ * 在patch期间被激活（activated）的keep-alive组件保存在队列中，到patch结束以后该队列会被处理
  */
 export function queueActivatedComponent (vm: Component) {
   // setting _inactive to false here so that a render function can
@@ -149,6 +162,7 @@ export function queueActivatedComponent (vm: Component) {
   activatedChildren.push(vm)
 }
 
+/*使子组件状态都改编成active同时调用activated钩子*/
 function callActivatedHooks (queue) {
   for (let i = 0; i < queue.length; i++) {
     queue[i]._inactive = true
@@ -160,9 +174,12 @@ function callActivatedHooks (queue) {
  * Push a watcher into the watcher queue.
  * Jobs with duplicate IDs will be skipped unless it's
  * pushed when the queue is being flushed.
+ * *将观察者推入观察者队列。具有重复ID的作业将被跳过，除非在刷新队列时推送。
  */
 export function queueWatcher (watcher: Watcher) {
-  const id = watcher.id
+  const id = watcher.id /*获取watcher的id*/
+
+  // 判断watcher id是否已经记录过，防止重复刷新
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {
@@ -176,7 +193,11 @@ export function queueWatcher (watcher: Watcher) {
       }
       queue.splice(i + 1, 0, watcher)
     }
-    // queue the flush
+    /**
+     * queue the flush
+     * 多次修改属性的值  只会执行一次
+     * 不论update执行多少次 但是最终只执行一轮刷新操作
+     */
     if (!waiting) {
       waiting = true
 
