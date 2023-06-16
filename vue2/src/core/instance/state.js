@@ -46,18 +46,19 @@ export function proxy (target: Object, sourceKey: string, key: string) {
   Object.defineProperty(target, key, sharedPropertyDefinition)
 }
 
+/*初始化 props、methods、data、computed与watch*/
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
-  if (opts.props) initProps(vm, opts.props)
-  if (opts.methods) initMethods(vm, opts.methods)
-  if (opts.data) {
+  if (opts.props) initProps(vm, opts.props) /*初始化props*/
+  if (opts.methods) initMethods(vm, opts.methods) /*初始化方法*/
+  if (opts.data) { /*初始化data*/
     initData(vm)
-  } else {
+  } else { /*该组件没有data的时候绑定一个空对象*/
     observe(vm._data = {}, true /* asRootData */)
   }
-  if (opts.computed) initComputed(vm, opts.computed)
-  if (opts.watch && opts.watch !== nativeWatch) {
+  if (opts.computed) initComputed(vm, opts.computed) /*初始化computed*/
+  if (opts.watch && opts.watch !== nativeWatch) { /*初始化watch*/
     initWatch(vm, opts.watch)
   }
 }
@@ -110,11 +111,16 @@ function initProps (vm: Component, propsOptions: Object) {
   toggleObserving(true)
 }
 
+// 初始化data
 function initData (vm: Component) {
   let data = vm.$options.data
+
+  //data可能是函数和对象 vue3认定是函数
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
+  
+  // 类型检查 如果不是对象返回警告
   if (!isPlainObject(data)) {
     data = {}
     process.env.NODE_ENV !== 'production' && warn(
@@ -128,6 +134,8 @@ function initData (vm: Component) {
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+
+  // 遍历data数据 保证data中的数据 与 props 和 methods 不重复
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
@@ -144,11 +152,13 @@ function initData (vm: Component) {
         `Use prop default value instead.`,
         vm
       )
-    } else if (!isReserved(key)) {
+    } else if (!isReserved(key)) { //检查字符串是否以 $ 或 _ 开头
+
+      // vm.xxx  代理到 vm._data.xxx 方便用户使用
       proxy(vm, `_data`, key)
     }
   }
-  // observe data
+  // 数据观测
   observe(data, true /* asRootData */)
 }
 
@@ -242,6 +252,7 @@ export function defineComputed (
 }
 
 function createComputedGetter (key) {
+
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
@@ -249,6 +260,7 @@ function createComputedGetter (key) {
         watcher.evaluate()
       }
       if (Dep.target) {
+        console.log('dep-target',Dep.target);
         watcher.depend()
       }
       return watcher.value
@@ -351,9 +363,12 @@ export function stateMixin (Vue: Class<Component>) {
     options?: Object
   ): Function {
     const vm: Component = this
+    
+    // 如果回调函数是对象
     if (isPlainObject(cb)) {
       return createWatcher(vm, expOrFn, cb, options)
     }
+
     options = options || {}
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
@@ -363,7 +378,9 @@ export function stateMixin (Vue: Class<Component>) {
       invokeWithErrorHandling(cb, vm, [watcher.value], vm, info)
       popTarget()
     }
+    /*返回一个取消观察函数，用来停止触发回调*/
     return function unwatchFn () {
+      /*将自身从所有依赖收集订阅列表删除*/
       watcher.teardown()
     }
   }
