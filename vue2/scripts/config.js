@@ -35,6 +35,10 @@ const resolve = p => {
   }
 }
 
+// dev prod
+// web-runtime(运行时无法解析 new Vue传入的template) web-full（runtime + 模板解析） compiler （只有compiler）
+// cjs esm borwser umd
+
 const builds = {
   // Runtime only (CommonJS). Used by bundlers e.g. Webpack & Browserify
   'web-runtime-cjs-dev': {
