@@ -3,6 +3,9 @@ node_modules
 /build
 .history
 
+/vue2/dist/*.js
+/vue2/dist/*.js.map
+
 # local env files
 .env.local
 .env.*.local
