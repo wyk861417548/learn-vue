@@ -29,10 +29,12 @@ export function setActiveInstance(vm: Component) {
   }
 }
 
+/*初始化生命周期*/
 export function initLifecycle (vm: Component) {
   const options = vm.$options
 
   // locate first non-abstract parent
+  /* 将vm对象存储到parent组件中（保证parent组件是非抽象组件，比如keep-alive） */
   let parent = options.parent
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
@@ -104,21 +106,27 @@ export function lifecycleMixin (Vue: Class<Component>) {
     if (vm._isBeingDestroyed) {
       return
     }
+    /* 调用beforeDestroy钩子 */
     callHook(vm, 'beforeDestroy')
     vm._isBeingDestroyed = true
     // remove self from parent
     const parent = vm.$parent
+
     if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
       remove(parent.$children, vm)
     }
+
     // teardown watchers
+     /* 该组件下的所有Watcher从其所在的Dep中释放 */
     if (vm._watcher) {
       vm._watcher.teardown()
     }
     let i = vm._watchers.length
+
     while (i--) {
       vm._watchers[i].teardown()
     }
+
     // remove reference from data ob
     // frozen object may not have observer.
     if (vm._data.__ob__) {
@@ -130,7 +138,8 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm.__patch__(vm._vnode, null)
     // fire destroyed hook
     callHook(vm, 'destroyed')
-    // turn off all instance listeners.
+
+    // turn off all instance listeners. /* 移除所有事件监听 */
     vm.$off()
     // remove __vue__ reference
     if (vm.$el) {
@@ -143,6 +152,7 @@ export function lifecycleMixin (Vue: Class<Component>) {
   }
 }
 
+/*挂载组件*/
 export function mountComponent (
   vm: Component,
   el: ?Element,
@@ -169,8 +179,11 @@ export function mountComponent (
       }
     }
   }
+
+  /*触发beforeMount钩子*/
   callHook(vm, 'beforeMount')
 
+  /*updateComponent作为Watcher对象的getter函数，用来依赖收集*/
   let updateComponent
   /* istanbul ignore if */
   if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
@@ -199,18 +212,20 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  /*这里对该vm注册一个Watcher实例，Watcher的getter为updateComponent函数，用于触发所有渲染所需要用到的数据的getter，进行依赖收集，该Watcher实例会存在所有渲染所需数据的闭包Dep中*/
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted && !vm._isDestroyed) {
         callHook(vm, 'beforeUpdate')
       }
     }
+    //true 用于标识 是一个渲染watcher
   }, true /* isRenderWatcher */)
   hydrating = false
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
-  if (vm.$vnode == null) {
+  if (vm.$vnode == null) { /*标志位，代表该组件已经挂载 调用mounted钩子*/
     vm._isMounted = true
     callHook(vm, 'mounted')
   }

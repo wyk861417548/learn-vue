@@ -759,93 +759,84 @@ function processComponent (el) {
   }
 }
 
+/*处理属性*/
 function processAttrs (el) {
+  /*获取元素属性列表*/
   const list = el.attrsList
   let i, l, name, rawName, value, modifiers, syncGen, isDynamic
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name
     value = list[i].value
+    /*匹配v-、@以及:，处理ele的特殊属性*/
     if (dirRE.test(name)) {
-      // mark element as dynamic
+      // mark element as dynamic /*标记该ele为动态的*/
       el.hasBindings = true
-      // modifiers
+      // modifiers /*解析表达式，比如a.b.c.d得到结果{b: true, c: true, d:true}*/
       modifiers = parseModifiers(name.replace(dirRE, ''))
+
       // support .foo shorthand syntax for the .prop modifier
       if (process.env.VBIND_PROP_SHORTHAND && propBindRE.test(name)) {
         (modifiers || (modifiers = {})).prop = true
         name = `.` + name.slice(1).replace(modifierRE, '')
+
       } else if (modifiers) {
+        /*得到第一级，比如a.b.c.d得到a，也就是上面的操作把所有子级取出来，这个把第一级取出来*/
         name = name.replace(modifierRE, '')
       }
+
+      /*如果属性是v-bind的*/
       if (bindRE.test(name)) { // v-bind
+        /*这样处理以后v-bind:aaa得到aaa*/
         name = name.replace(bindRE, '')
+        /*解析过滤器*/
         value = parseFilters(value)
         isDynamic = dynamicArgRE.test(name)
+
         if (isDynamic) {
           name = name.slice(1, -1)
         }
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          value.trim().length === 0
-        ) {
-          warn(
-            `The value for a v-bind expression cannot be empty. Found in "v-bind:${name}"`
-          )
+
+        if (process.env.NODE_ENV !== 'production' &&value.trim().length === 0) {
+          warn(`The value for a v-bind expression cannot be empty. Found in "v-bind:${name}"`)
         }
+
+        /*
+          https://v2.cn.vuejs.org/v2/api/#v-bind
+          这里用来处理v-bind的修饰符
+          .prop - 被用于绑定 DOM 属性
+        */
         if (modifiers) {
           if (modifiers.prop && !isDynamic) {
-            name = camelize(name)
+            name = camelize(name)  /*将原本用-连接的字符串变成驼峰 aaa-bbb-ccc => aaaBbbCcc*/
             if (name === 'innerHtml') name = 'innerHTML'
           }
           if (modifiers.camel && !isDynamic) {
-            name = camelize(name)
+            name = camelize(name) /*.camel - (2.1.0+) 将 kebab-case 特性名转换为 camelCase. (从 2.1.0 开始支持)*/
           }
+          //.sync (2.3.0+) 语法糖，会扩展成一个更新父组件绑定值的 v-on 侦听器。
           if (modifiers.sync) {
             syncGen = genAssignmentCode(value, `$event`)
             if (!isDynamic) {
-              addHandler(
-                el,
-                `update:${camelize(name)}`,
-                syncGen,
-                null,
-                false,
-                warn,
-                list[i]
-              )
+              addHandler(el,`update:${camelize(name)}`,syncGen,null,false,warn,list[i])
               if (hyphenate(name) !== camelize(name)) {
-                addHandler(
-                  el,
-                  `update:${hyphenate(name)}`,
-                  syncGen,
-                  null,
-                  false,
-                  warn,
-                  list[i]
-                )
+                addHandler(el,`update:${hyphenate(name)}`,syncGen,null,false,warn,list[i])
               }
             } else {
-              // handler w/ dynamic event name
-              addHandler(
-                el,
-                `"update:"+(${name})`,
-                syncGen,
-                null,
-                false,
-                warn,
-                list[i],
-                true // dynamic
-              )
+              // handler w/ dynamic event name // dynamic
+              addHandler(el,`"update:"+(${name})`,syncGen,null,false,warn,list[i],true)
             }
           }
         }
+
         if ((modifiers && modifiers.prop) || (
           !el.component && platformMustUseProp(el.tag, el.attrsMap.type, name)
         )) {
-          addProp(el, name, value, list[i], isDynamic)
+          addProp(el, name, value, list[i], isDynamic)  /*将属性放入ele的props属性中*/
         } else {
-          addAttr(el, name, value, list[i], isDynamic)
+          addAttr(el, name, value, list[i], isDynamic) /*将属性放入ele的attr属性中*/
         }
       } else if (onRE.test(name)) { // v-on
+        /*处理v-on以及bind*/
         name = name.replace(onRE, '')
         isDynamic = dynamicArgRE.test(name)
         if (isDynamic) {
@@ -853,9 +844,11 @@ function processAttrs (el) {
         }
         addHandler(el, name, value, modifiers, false, warn, list[i], isDynamic)
       } else { // normal directives
+        /*去除@、:、v-*/
         name = name.replace(dirRE, '')
         // parse arg
         const argMatch = name.match(argRE)
+        /*比如:fun="functionA"解析出fun="functionA"*/
         let arg = argMatch && argMatch[1]
         isDynamic = false
         if (arg) {
@@ -865,16 +858,21 @@ function processAttrs (el) {
             isDynamic = true
           }
         }
+        /*将参数加入到ele的directives中去*/
         addDirective(el, name, rawName, value, arg, isDynamic, modifiers, list[i])
         if (process.env.NODE_ENV !== 'production' && name === 'model') {
           checkForAliasModel(el, value)
         }
       }
     } else {
-      // literal attribute
+      // literal attribute /*处理常规的字符串属性*/
       if (process.env.NODE_ENV !== 'production') {
         const res = parseText(value, delimiters)
         if (res) {
+          /*
+            插入属性内部会被删除，请改用冒号或者v-bind
+            比如应该用<div :id="test">来代替<div id="{{test}}">
+          */
           warn(
             `${name}="${value}": ` +
             'Interpolation inside attributes has been removed. ' +
@@ -884,6 +882,7 @@ function processAttrs (el) {
           )
         }
       }
+      /*将属性放入ele的attr属性中*/
       addAttr(el, name, JSON.stringify(value), list[i])
       // #6887 firefox doesn't update muted state if set via attribute
       // even immediately after element creation
