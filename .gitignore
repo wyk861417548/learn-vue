@@ -3,8 +3,8 @@ node_modules
 /build
 .history
 
-/vue2/dist/*.js
-/vue2/dist/*.js.map
+/vue2
+/vue3
 
 # local env files
 .env.local
