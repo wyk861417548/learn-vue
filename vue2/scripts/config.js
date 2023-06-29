@@ -25,6 +25,7 @@ const weexFactoryPlugin = {
   }
 }
 
+// 对应的打包文件的路径
 const aliases = require('./alias')
 const resolve = p => {
   const base = p.split('/')[0]
