@@ -4,7 +4,6 @@ node_modules
 .history
 
 /vue2
-/vue3
 
 # local env files
 .env.local
