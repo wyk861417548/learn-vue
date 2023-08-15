@@ -7,9 +7,11 @@ import { isIE, isIOS, isNative } from './env'
 
 export let isUsingMicroTask = false
 
+// 维护的队列集合
 const callbacks = []
 let pending = false
 
+// 按照队列顺序执行回调
 function flushCallbacks () {
   pending = false
   const copies = callbacks.slice(0)
@@ -39,6 +41,10 @@ let timerFunc
 // completely stops working after triggering a few times... so, if native
 // Promise is available, we will use it:
 /* istanbul ignore next, $flow-disable-line */
+/**
+ * vue中的 nextTick没有直接采用某个api 而是采用优雅降级的方式
+ * 内部首先采用promise(ie 不兼容) MutationObserver(h5 的api)  ie专项 setImmediate
+ */
 if (typeof Promise !== 'undefined' && isNative(Promise)) {
   const p = Promise.resolve()
   timerFunc = () => {
@@ -84,6 +90,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
   }
 }
 
+// nextTick 不是维护了一个异步任务   而是将这个任务维护到了队列中
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
   callbacks.push(() => {
@@ -97,7 +104,9 @@ export function nextTick (cb?: Function, ctx?: Object) {
       _resolve(ctx)
     }
   })
+  console.log('-------',cb);
   if (!pending) {
+    console.log('pending',pending);
     pending = true
     timerFunc()
   }
