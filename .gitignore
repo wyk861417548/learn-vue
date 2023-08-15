@@ -1,4 +1,7 @@
 # 忽略所有文件
 *
+# vue3文件不忽略
+!vue3/
+!vue3/**
 !.gitignore
 !README.md
