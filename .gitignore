@@ -1,4 +1,7 @@
 # 忽略所有文件
 *
+# vue2文件不忽略
+!vue2/
+!vue2/**
 !.gitignore
 !README.md
