@@ -41,10 +41,11 @@ const componentVNodeHooks = {
       !vnode.componentInstance._isDestroyed &&
       vnode.data.keepAlive
     ) {
-      // kept-alive components, treat as a patch
+      // 对于 keep-alive 缓存的组件，视为 patch 过程 
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // 创建组件实例并挂载
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
@@ -54,19 +55,22 @@ const componentVNodeHooks = {
   },
 
   prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
+    // 更新组件实例属性、事件等
     const options = vnode.componentOptions
     const child = vnode.componentInstance = oldVnode.componentInstance
     updateChildComponent(
       child,
-      options.propsData, // updated props
-      options.listeners, // updated listeners
-      vnode, // new parent vnode
-      options.children // new children
+      options.propsData, // updated props  更新后的 props
+      options.listeners, // updated listeners 更新后的事件监听
+      vnode, // new parent vnode 新的父 VNode
+      options.children // new children  新的子节点 VNode 数组
     )
   },
 
   insert (vnode: MountedComponentVNode) {
     const { context, componentInstance } = vnode
+
+    // 标记组件已经挂载，并调用 mounted 钩子
     if (!componentInstance._isMounted) {
       componentInstance._isMounted = true
       callHook(componentInstance, 'mounted')
@@ -78,8 +82,11 @@ const componentVNodeHooks = {
         // change, so directly walking the tree here may call activated hooks
         // on incorrect children. Instead we push them into a queue which will
         // be processed after the whole patch process ended.
+        // 在更新过程中，keep-alive 组件的子组件可能会发生变化，
+        // 所以将这些子组件放入队列中，在整个 patch 过程结束后再处理
         queueActivatedComponent(componentInstance)
       } else {
+        // 激活 keep-alive 缓存的组件
         activateChildComponent(componentInstance, true /* direct */)
       }
     }
@@ -88,15 +95,18 @@ const componentVNodeHooks = {
   destroy (vnode: MountedComponentVNode) {
     const { componentInstance } = vnode
     if (!componentInstance._isDestroyed) {
-      if (!vnode.data.keepAlive) {
+      if (!vnode.data.keepAlive) { 
+        // 销毁组件实例
         componentInstance.$destroy()
       } else {
+        // 取消激活 keep-alive 缓存的组件
         deactivateChildComponent(componentInstance, true /* direct */)
       }
     }
   }
 }
 
+// 需要合并到组件 VNode 节点的钩子函数
 const hooksToMerge = Object.keys(componentVNodeHooks)
 
 // 创建组件 返回Vnode节点
@@ -139,6 +149,8 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 返回一个占位符节点，用于渲染异步组件，以保留节点的原始信息
+      // 用于异步服务器渲染和hydration
       return createAsyncPlaceholder(
         asyncFactory,
         data,

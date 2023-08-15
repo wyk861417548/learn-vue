@@ -138,7 +138,7 @@ export function createPatchFunction (backend) {
 
     vnode.isRootInsert = !nested // for transition enter check
 
-    /*创建一个组件节点*/
+    /*如果当前虚拟dom是组件虚拟dom 那么执行虚拟dom钩子 */
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -207,7 +207,7 @@ export function createPatchFunction (backend) {
     }
   }
 
-  // 创建一个组件
+  // 判断是真实虚拟dom还是组件虚拟dom  
   function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
     let i = vnode.data
     if (isDef(i)) {
