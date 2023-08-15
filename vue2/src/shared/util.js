@@ -4,10 +4,13 @@ export const emptyObject = Object.freeze({})
 
 // These helpers produce better VM code in JS engines due to their
 // explicitness and function inlining.
+
+// 是否不存在
 export function isUndef (v: any): boolean %checks {
   return v === undefined || v === null
 }
 
+// 是否存在
 export function isDef (v: any): boolean %checks {
   return v !== undefined && v !== null
 }
@@ -37,6 +40,7 @@ export function isPrimitive (value: any): boolean %checks {
  * Quick object check - this is primarily used to tell
  * objects from primitive values when we know the value
  * is a JSON-compliant type.
+ * 是否是一个对象
  */
 export function isObject (obj: mixed): boolean %checks {
   return obj !== null && typeof obj === 'object'
@@ -52,8 +56,7 @@ export function toRawType (value: any): string {
 }
 
 /**
- * Strict object type check. Only returns true
- * for plain JavaScript objects.
+ *严格的对象类型检查。只有当对象是纯javascript对象时返回true
  */
 export function isPlainObject (obj: any): boolean {
   return _toString.call(obj) === '[object Object]'
@@ -80,7 +83,7 @@ export function isPromise (val: any): boolean {
 }
 
 /**
- * Convert a value to a string that is actually rendered.
+ * 将val转化成字符串
  */
 export function toString (val: any): string {
   return val == null
@@ -91,8 +94,7 @@ export function toString (val: any): string {
 }
 
 /**
- * Convert an input value to a number for persistence.
- * If the conversion fails, return original string.
+ * 将字符串转化为数字，如果转换失败会返回原字符串
  */
 export function toNumber (val: string): number | string {
   const n = parseFloat(val)
@@ -140,7 +142,7 @@ export function remove (arr: Array<any>, item: any): Array<any> | void {
 }
 
 /**
- * Check whether an object has the property.
+ * 对象是否拥有该属性
  */
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export function hasOwn (obj: Object | Array<*>, key: string): boolean {
@@ -227,6 +229,7 @@ export function toArray (list: any, start?: number): Array<any> {
 
 /**
  * Mix properties into target object.
+ * 将属性 赋于 目标对象上
  */
 export function extend (to: Object, _from: ?Object): Object {
   for (const key in _from) {
@@ -330,7 +333,7 @@ export function looseIndexOf (arr: Array<mixed>, val: mixed): number {
 }
 
 /**
- * Ensure a function is called only once.
+ * 确保函数只被调用一次
  */
 export function once (fn: Function): Function {
   let called = false
