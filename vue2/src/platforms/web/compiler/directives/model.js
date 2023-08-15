@@ -35,10 +35,13 @@ export default function model (
   }
 
   if (el.component) {
+    // 如果是组件
     genComponentModel(el, value, modifiers)
     // component v-model doesn't need extra runtime
     return false
-  } else if (tag === 'select') {
+
+    // 不同的input 类型 进行不同的操作
+  } else if (tag === 'select') {  //如果是select
     genSelect(el, value, modifiers)
   } else if (tag === 'input' && type === 'checkbox') {
     genCheckboxModel(el, value, modifiers)

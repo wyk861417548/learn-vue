@@ -34,6 +34,7 @@ const directive = {
     } else if (vnode.tag === 'textarea' || isTextInputType(el.type)) {
       el._vModifiers = binding.modifiers
       if (!binding.modifiers.lazy) {
+        // 监听中文输入完毕的事件
         el.addEventListener('compositionstart', onCompositionStart)
         el.addEventListener('compositionend', onCompositionEnd)
         // Safari < 10.2 & UIWebView doesn't fire compositionend when
@@ -134,7 +135,7 @@ function onCompositionStart (e) {
 function onCompositionEnd (e) {
   // prevent triggering an input event for no reason
   if (!e.target.composing) return
-  e.target.composing = false
+  e.target.composing = false   //composing 更改为false  并且手动触发input事件
   trigger(e.target, 'input')
 }
 
