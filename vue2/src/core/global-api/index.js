@@ -60,10 +60,11 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   // components with in Weex's multi-instance scenarios.
   Vue.options._base = Vue
 
+  {/* keep-alive的实现 */}
   extend(Vue.options.components, builtInComponents)
 
-  initUse(Vue)
-  initMixin(Vue)
-  initExtend(Vue)
-  initAssetRegisters(Vue)
+  initUse(Vue) //Vue.use
+  initMixin(Vue) // Vue.mixin 混入
+  initExtend(Vue) // Vue.extend
+  initAssetRegisters(Vue) //实现 Vue.component Vue.directive Vue.filter
 }
